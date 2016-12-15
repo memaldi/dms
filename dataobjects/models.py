@@ -25,9 +25,13 @@ class Dataset(models.Model):
 
 
 class Resource(models.Model):
+    DEFAULT_RESOURCE_DESCRIPTION = _('No description is provided for this '
+                                     'resource')
+
     title = models.CharField(max_length=50)
-    name = models.SlugField(max_length=50)
-    description = models.TextField()
+    description = models.TextField(
+        default=DEFAULT_RESOURCE_DESCRIPTION)
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     _format = models.CharField(max_length=10)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)

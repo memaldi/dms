@@ -1,5 +1,5 @@
 from django.test import TestCase
-from dataobjects.models import Dataset
+from dataobjects.models import Dataset, Resource
 from django.db import IntegrityError
 
 # Create your tests here.
@@ -59,3 +59,72 @@ class DatasetTestCase(TestCase):
         Dataset.objects.create(title='Test Dataset')
         with self.assertRaises(IntegrityError):
             Dataset.objects.create(title='Test Dataset')
+
+
+class ResourceTestCase(TestCase):
+    def test_create_resource_default_description(self):
+        dataset = Dataset(title='Test dataset')
+        dataset.save()
+        resource = Resource(title='Test resource', _format='CSV',
+                            dataset=dataset)
+        resource.save()
+        self.assertEqual(len(Resource.objects.all()), 1)
+        self.assertEqual(Resource.objects.first().title, 'Test resource')
+        self.assertEqual(Resource.objects.first().description,
+                         Resource.DEFAULT_RESOURCE_DESCRIPTION)
+        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        self.assertEqual(Resource.objects.first().dataset, dataset)
+
+    def test_create_resource(self):
+        dataset = Dataset(title='Test dataset')
+        dataset.save()
+        resource = Resource(title='Test resource', _format='CSV',
+                            description='This is a resource description',
+                            dataset=dataset)
+        resource.save()
+        self.assertEqual(len(Resource.objects.all()), 1)
+        self.assertEqual(Resource.objects.first().title, 'Test resource')
+        self.assertEqual(Resource.objects.first().description,
+                         'This is a resource description')
+        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        self.assertEqual(Resource.objects.first().dataset, dataset)
+
+    def test_modify_resource(self):
+        dataset = Dataset(title='Test dataset')
+        dataset.save()
+        resource = Resource(title='Test resource', _format='CSV',
+                            dataset=dataset)
+        resource.save()
+        self.assertEqual(len(Resource.objects.all()), 1)
+        self.assertEqual(Resource.objects.first().title, 'Test resource')
+        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        resource.title = 'Modified Test Resource'
+        resource._format = 'JSON'
+        resource.save()
+        self.assertEqual(Resource.objects.first().title,
+                         'Modified Test Resource')
+        self.assertEqual(Resource.objects.first()._format, 'JSON')
+
+    def test_delete_resource(self):
+        dataset = Dataset(title='Test dataset')
+        dataset.save()
+        resource = Resource(title='Test resource', _format='CSV',
+                            dataset=dataset)
+        resource.save()
+        self.assertEqual(len(Resource.objects.all()), 1)
+        self.assertEqual(len(Dataset.objects.all()), 1)
+        resource.delete()
+        self.assertEqual(len(Resource.objects.all()), 0)
+        self.assertEqual(len(Dataset.objects.all()), 1)
+
+    def test_delete_resource_on_cascade(self):
+        dataset = Dataset(title='Test dataset')
+        dataset.save()
+        resource = Resource(title='Test resource', _format='CSV',
+                            dataset=dataset)
+        resource.save()
+        self.assertEqual(len(Resource.objects.all()), 1)
+        self.assertEqual(len(Dataset.objects.all()), 1)
+        dataset.delete()
+        self.assertEqual(len(Resource.objects.all()), 0)
+        self.assertEqual(len(Dataset.objects.all()), 0)
