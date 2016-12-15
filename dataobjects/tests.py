@@ -127,4 +127,4 @@ class ResourceTestCase(TestCase):
         self._delete_dataset_and_resource()
 
     def test_delete_resource_on_cascade(self):
-        self._delete_dataset_and_resource()
+        self._delete_dataset_and_resource(on_cascade=True)
