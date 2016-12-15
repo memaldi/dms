@@ -6,6 +6,6 @@ install:
     - pip install coveralls
     - pip install -r requirements.txt
 script:
-    - coverage run manage.py test
+    - coverage run --source=dms,dataobjects manage.py test
 after_success:
     - coveralls
