@@ -105,7 +105,7 @@ class ResourceTestCase(TestCase):
                          'Modified Test Resource')
         self.assertEqual(Resource.objects.first()._format, 'JSON')
 
-    def test_delete_resource(self):
+    def _delete_dataset_and_resource(self, on_cascade=False):
         dataset = Dataset(title='Test dataset')
         dataset.save()
         resource = Resource(title='Test resource', _format='CSV',
@@ -113,18 +113,18 @@ class ResourceTestCase(TestCase):
         resource.save()
         self.assertEqual(len(Resource.objects.all()), 1)
         self.assertEqual(len(Dataset.objects.all()), 1)
-        resource.delete()
+        if on_cascade:
+            dataset.delete()
+        else:
+            resource.delete()
+        if on_cascade:
+            self.assertEqual(len(Dataset.objects.all()), 0)
+        else:
+            self.assertEqual(len(Dataset.objects.all()), 1)
         self.assertEqual(len(Resource.objects.all()), 0)
-        self.assertEqual(len(Dataset.objects.all()), 1)
+
+    def test_delete_resource(self):
+        self._delete_dataset_and_resource()
 
     def test_delete_resource_on_cascade(self):
-        dataset = Dataset(title='Test dataset')
-        dataset.save()
-        resource = Resource(title='Test resource', _format='CSV',
-                            dataset=dataset)
-        resource.save()
-        self.assertEqual(len(Resource.objects.all()), 1)
-        self.assertEqual(len(Dataset.objects.all()), 1)
-        dataset.delete()
-        self.assertEqual(len(Resource.objects.all()), 0)
-        self.assertEqual(len(Dataset.objects.all()), 0)
+        self._delete_dataset_and_resource()
