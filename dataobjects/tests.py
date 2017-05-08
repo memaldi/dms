@@ -1,5 +1,6 @@
 from django.test import TestCase
 from dataobjects.models import Dataset, Resource
+from dataobjects.forms import DatasetForm
 from django.db import IntegrityError
 
 # Create your tests here.
@@ -128,3 +129,43 @@ class ResourceTestCase(TestCase):
 
     def test_delete_resource_on_cascade(self):
         self._delete_dataset_and_resource(on_cascade=True)
+
+
+class DatasetFormTestCase(TestCase):
+    def test_create_dataset_form(self):
+        form = DatasetForm({
+            'title': 'Test dataset',
+            'name': 'test-dataset',
+            'description': 'This is a test dataset.'
+        })
+
+        self.assertEqual(True, form.is_valid())
+
+        dataset = form.save()
+
+        self.assertEqual('Test dataset', dataset.title)
+        self.assertEqual('test-dataset', dataset.name)
+        self.assertEqual('This is a test dataset.', dataset.description)
+
+    def test_create_dataset_invalid_name(self):
+        form = DatasetForm({
+            'title': 'Test dataset',
+            'name': 'test-dataset',
+            'description': 'This is a test dataset.'
+        })
+
+        self.assertEqual(True, form.is_valid())
+
+        dataset = form.save()
+
+        self.assertEqual('Test dataset', dataset.title)
+        self.assertEqual('test-dataset', dataset.name)
+        self.assertEqual('This is a test dataset.', dataset.description)
+
+        form = DatasetForm({
+            'title': 'Test dataset',
+            'name': 'test-dataset',
+            'description': 'This is a test dataset.'
+        })
+
+        self.assertEqual(False, form.is_valid())
