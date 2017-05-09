@@ -4,9 +4,9 @@ from dataobjects.forms import DatasetForm
 from django.db import IntegrityError
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
-from unittest import skip
 import json
 import base64
+import re
 
 # Create your tests here.
 
@@ -221,8 +221,104 @@ class DatasetListJSONTestCase(TestCase):
 
         self.assertEqual(2, Dataset.objects.count())
 
+    def test_post_dataset_json_error(self):
+        self.assertEqual(1, Dataset.objects.count())
 
-class DatasetListHTMLTestCase(TestCase):
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/', json.dumps(body),
+                                    content_type='application/json', **headers)
+
+        self.assertEqual(400, response.status_code)
+
+        self.assertEqual(1, Dataset.objects.count())
+
+
+class DatasetDetailJSONTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        user = User.objects.create_user(BASIC_USER, password=BASIC_PASSWORD)
+        user.save()
+
+        dataset = Dataset(title='Dataset title',
+                          description='Dataset description')
+        dataset.save()
+
+    def test_get_dataset_json(self):
+        headers = {'HTTP_ACCEPT': 'application/json'}
+        response = self.client.get('/dataset/1/', **headers)
+
+        self.assertEqual(200, response.status_code)
+
+        response_json = json.loads(response.content)
+
+        self.assertEqual('Dataset title', response_json['title'])
+        self.assertEqual('Dataset description',
+                         response_json['description'])
+        self.assertEqual('dataset-title', response_json['name'])
+
+    def test_put_dataset_json(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another modified dataset',
+                'name': 'another-modified-dataset',
+                'description': 'Another modified dataset description'}
+        response = self.client.put('/dataset/1/', json.dumps(body),
+                                   content_type='application/json', **headers)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, Dataset.objects.count())
+
+        dataset = Dataset.objects.first()
+        self.assertEqual('Another modified dataset', dataset.title)
+        self.assertEqual('another-modified-dataset', dataset.name)
+        self.assertEqual('Another modified dataset description',
+                         dataset.description)
+
+    def test_put_dataset_json_error(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another modified dataset',
+                'description': 'Another modified dataset description'}
+        response = self.client.put('/dataset/1/', json.dumps(body),
+                                   content_type='application/json', **headers)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(1, Dataset.objects.count())
+
+    def test_delete_dataset_json(self):
+        self.assertEqual(1, Dataset.objects.count())
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        response = self.client.delete('/dataset/1/',
+                                      content_type='application/json',
+                                      **headers)
+
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(0, Dataset.objects.count())
+
+
+class DatasetHTMLTestCase(TestCase):
+    @staticmethod
+    def remove_csrf(html_code):
+        csrf_regex = r'<input[^>]+csrfmiddlewaretoken[^>]+>'
+        return re.sub(csrf_regex, '', html_code)
+
     def setUp(self):
         self.client = Client()
 
@@ -244,21 +340,101 @@ class DatasetListHTMLTestCase(TestCase):
 
         self.assertEqual(expected, response.content.decode())
 
-    @skip
-    def test_post_dataset_html(self):
+    def test_new_dataset_html(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
                        base64.b64encode('{}:{}'.format(
                             BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another dataset',
                 'name': 'another-dataset',
                 'description': 'Another dataset description'}
-        response = self.client.post('/dataset/', json.dumps(body),
-                                    content_type='text/html', **headers)
+        response = self.client.post('/dataset/new/', body,
+                                    **headers)
 
-        print(response.content)
-        self.assertEqual(201, response.status_code)
+        self.assertEqual(302, response.status_code)
 
         self.assertEqual(2, Dataset.objects.count())
+
+    def test_new_dataset_html_error(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'name': 'another-dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/new/', body,
+                                    **headers)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, Dataset.objects.count())
+
+        form = DatasetForm(body)
+        expected = render_to_string('dataobjects/edit_dataset.html',
+                                    {'form': form})
+
+        self.assertEqual(expected, self.remove_csrf(response.content.decode()))
+
+    def test_get_dataset_html(self):
+        headers = {'HTTP_ACCEPT': 'text/html'}
+        response = self.client.get('/dataset/1/', **headers)
+
+        self.assertEqual(200, response.status_code)
+
+        expected = render_to_string('dataobjects/dataset.html',
+                                    {'dataset': Dataset.objects.get(pk=1)})
+
+        self.assertEqual(expected, response.content.decode())
+
+    def test_edit_dataset_html(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another dataset',
+                'name': 'another-dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/1/edit/', body,
+                                    **headers)
+
+        self.assertEqual(302, response.status_code)
+
+        dataset = Dataset.objects.get(pk=1)
+        self.assertEqual('Another dataset', dataset.title)
+        self.assertEqual('another-dataset', dataset.name)
+        self.assertEqual('Another dataset description', dataset.description)
+
+        self.assertEqual(1, Dataset.objects.count())
+
+    def test_edit_dataset_html_error(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'name': 'another-dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/1/edit/', body,
+                                    **headers)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, Dataset.objects.count())
+
+        dataset = Dataset.objects.get(pk=1)
+        form = DatasetForm(body, instance=dataset)
+        expected = render_to_string('dataobjects/edit_dataset.html',
+                                    {'form': form})
+        self.assertEqual(expected, self.remove_csrf(response.content.decode()))
+
+    def test_delete_dataset_html(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+
+        response = self.client.get('/dataset/1/delete/', **headers)
+
+        self.assertEqual(302, response.status_code)
