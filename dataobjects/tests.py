@@ -1,9 +1,17 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from dataobjects.models import Dataset, Resource
 from dataobjects.forms import DatasetForm
 from django.db import IntegrityError
+from django.template.loader import render_to_string
+from django.contrib.auth.models import User
+from unittest import skip
+import json
+import base64
 
 # Create your tests here.
+
+BASIC_USER = 'test-user'
+BASIC_PASSWORD = 'test-password'
 
 
 class DatasetTestCase(TestCase):
@@ -169,3 +177,88 @@ class DatasetFormTestCase(TestCase):
         })
 
         self.assertEqual(False, form.is_valid())
+
+
+class DatasetListJSONTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        user = User.objects.create_user(BASIC_USER, password=BASIC_PASSWORD)
+        user.save()
+
+        dataset = Dataset(title='Dataset title',
+                          description='Dataset description')
+        dataset.save()
+
+    def test_get_datasets_json(self):
+        headers = {'HTTP_ACCEPT': 'application/json'}
+        response = self.client.get('/dataset/', **headers)
+
+        self.assertEqual(200, response.status_code)
+
+        response_json = json.loads(response.content)
+
+        self.assertEqual(1, len(response_json))
+        self.assertEqual('Dataset title', response_json[0]['title'])
+        self.assertEqual('Dataset description',
+                         response_json[0]['description'])
+        self.assertEqual('dataset-title', response_json[0]['name'])
+
+    def test_post_dataset_json(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another dataset',
+                'name': 'another-dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/', json.dumps(body),
+                                    content_type='application/json', **headers)
+
+        self.assertEqual(201, response.status_code)
+
+        self.assertEqual(2, Dataset.objects.count())
+
+
+class DatasetListHTMLTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        user = User.objects.create_user(BASIC_USER, password=BASIC_PASSWORD)
+        user.save()
+
+        dataset = Dataset(title='Dataset title',
+                          description='Dataset description')
+        dataset.save()
+
+    def test_get_datasets_html(self):
+        headers = {'HTTP_ACCEPT': 'text/html'}
+        response = self.client.get('/dataset/', **headers)
+
+        self.assertEqual(200, response.status_code)
+
+        expected = render_to_string('dataobjects/datasets.html',
+                                    {'datasets': Dataset.objects.all()})
+
+        self.assertEqual(expected, response.content.decode())
+
+    @skip
+    def test_post_dataset_html(self):
+        self.assertEqual(1, Dataset.objects.count())
+
+        headers = {'HTTP_ACCEPT': 'application/json',
+                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+        body = {'title': 'Another dataset',
+                'name': 'another-dataset',
+                'description': 'Another dataset description'}
+        response = self.client.post('/dataset/', json.dumps(body),
+                                    content_type='text/html', **headers)
+
+        print(response.content)
+        self.assertEqual(201, response.status_code)
+
+        self.assertEqual(2, Dataset.objects.count())
