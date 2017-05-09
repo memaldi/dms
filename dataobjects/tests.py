@@ -190,6 +190,12 @@ class DatasetListJSONTestCase(TestCase):
                           description='Dataset description')
         dataset.save()
 
+        self.json_headers = {'HTTP_ACCEPT': 'application/json',
+                             'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                                base64.b64encode('{}:{}'.format(
+                                    BASIC_USER,
+                                    BASIC_PASSWORD).encode()).decode())}
+
     def test_get_datasets_json(self):
         headers = {'HTTP_ACCEPT': 'application/json'}
         response = self.client.get('/dataset/', **headers)
@@ -224,30 +230,15 @@ class DatasetListJSONTestCase(TestCase):
     def test_post_dataset_json_error(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/', json.dumps(body),
-                                    content_type='application/json', **headers)
+                                    content_type='application/json',
+                                    **self.json_headers)
 
         self.assertEqual(400, response.status_code)
 
         self.assertEqual(1, Dataset.objects.count())
-
-
-class DatasetDetailJSONTestCase(TestCase):
-    def setUp(self):
-        self.client = Client()
-
-        user = User.objects.create_user(BASIC_USER, password=BASIC_PASSWORD)
-        user.save()
-
-        dataset = Dataset(title='Dataset title',
-                          description='Dataset description')
-        dataset.save()
 
     def test_get_dataset_json(self):
         headers = {'HTTP_ACCEPT': 'application/json'}
@@ -287,14 +278,11 @@ class DatasetDetailJSONTestCase(TestCase):
     def test_put_dataset_json_error(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another modified dataset',
                 'description': 'Another modified dataset description'}
         response = self.client.put('/dataset/1/', json.dumps(body),
-                                   content_type='application/json', **headers)
+                                   content_type='application/json',
+                                   **self.json_headers)
 
         self.assertEqual(400, response.status_code)
         self.assertEqual(1, Dataset.objects.count())
@@ -329,6 +317,10 @@ class DatasetHTMLTestCase(TestCase):
                           description='Dataset description')
         dataset.save()
 
+        self.headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+
     def test_get_datasets_html(self):
         headers = {'HTTP_ACCEPT': 'text/html'}
         response = self.client.get('/dataset/', **headers)
@@ -343,14 +335,11 @@ class DatasetHTMLTestCase(TestCase):
     def test_new_dataset_html(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another dataset',
                 'name': 'another-dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/new/', body,
-                                    **headers)
+                                    **self.headers)
 
         self.assertEqual(302, response.status_code)
 
@@ -359,13 +348,10 @@ class DatasetHTMLTestCase(TestCase):
     def test_new_dataset_html_error(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'name': 'another-dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/new/', body,
-                                    **headers)
+                                    **self.headers)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, Dataset.objects.count())
@@ -390,14 +376,11 @@ class DatasetHTMLTestCase(TestCase):
     def test_edit_dataset_html(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another dataset',
                 'name': 'another-dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/1/edit/', body,
-                                    **headers)
+                                    **self.headers)
 
         self.assertEqual(302, response.status_code)
 
@@ -411,13 +394,10 @@ class DatasetHTMLTestCase(TestCase):
     def test_edit_dataset_html_error(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'name': 'another-dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/1/edit/', body,
-                                    **headers)
+                                    **self.headers)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, Dataset.objects.count())
@@ -431,10 +411,6 @@ class DatasetHTMLTestCase(TestCase):
     def test_delete_dataset_html(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
-
-        response = self.client.get('/dataset/1/delete/', **headers)
+        response = self.client.get('/dataset/1/delete/', **self.headers)
 
         self.assertEqual(302, response.status_code)
