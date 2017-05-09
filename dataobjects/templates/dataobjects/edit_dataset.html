@@ -1,5 +1,55 @@
-<form action="" method="POST">
-    {% csrf_token %}
-    {{ form }}
-    <input type="submit" value="Submit" />
+{% extends "dataobjects/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <a href="">
+            <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+        </a> /
+        <a href="{% url 'dataset' %}">Datasets</a> /
+        <a href="">{{ form.instance.title }}</a>
+    </h1>
+</div>
+
+<form class="form-horizontal" action="" method="POST">
+  {% csrf_token %}
+  <div class="form-group {% if form.title.errors %}has-error{% endif %}">
+    <label for="{{ form.title.id_for_label }}" class="col-md-2 control-label">{{ form.title.label }}</label>
+    <div class="col-md-10">
+      <input type="text" class="form-control" name="{{ form.title.html_name }}" id="{{ form.title.id_for_label }}" placeholder="Title" value="{{form.title.value}}" aria-describedby="{{ form.title.id_for_label }}-errors">
+      {% for error in form.title.errors %}
+          <span id="{{ form.title.id_for_label }}-errors" class="help-block">{{ error }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="{{ form.name.id_for_label }}" class="col-md-2 control-label">URL</label>
+    <div class="col-md-10">
+        <div class="input-group">
+            <span class="input-group-addon" id="basic-addon3">https://example.com/dataset/</span>
+            <input type="text" class="form-control" name="{{ form.name.html_name }}" id="basic-url" aria-describedby="basic-addon3" value="{{ form.name.value }}" aria-describedby="{{ form.name.id_for_label }}-errors">
+            {% for error in form.name.errors %}
+                <span id="{{ form.name.id_for_label }}-errors" class="help-block">{{ error }}</span>
+            {% endfor %}
+        </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="{{ form.description.id_for_label }}" class="col-md-2 control-label">{{ form.description.label }}</label>
+    <div class="col-md-10">
+      <input type="text" class="form-control" name="{{ form.description.html_name }}" id="{{ form.description.id_for_label }}" placeholder="Description" value="{{form.description.value}}" aria-describedby="{{ form.description.id_for_label }}-errors">
+      {% for error in form.description.errors %}
+          <span id="{{ form.description.id_for_label }}-errors" class="help-block">{{ error }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-md-offset-2 col-md-10">
+      <button type="submit" class="btn btn-default">Save</button>
+    </div>
+  </div>
 </form>
+{% endblock %}
