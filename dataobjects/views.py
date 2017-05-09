@@ -81,4 +81,4 @@ def edit_dataset(request, pk):
 def delete_dataset(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
     dataset.delete()
-    return redirect('dataset_detail')
+    return redirect('dataset')
