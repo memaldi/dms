@@ -431,7 +431,7 @@ class ResourceJSONTestCase(TestCase):
                      'description': 'Another Resource description',
                      'format': 'JSON'}
 
-    def test_get_resource_json(self):
+    def test_get_resources_json(self):
         response = self.client.get('/dataset/1/resource/')
 
         response_json = json.loads(response.content)
@@ -459,3 +459,30 @@ class ResourceJSONTestCase(TestCase):
         for resource in Resource.objects.all():
             dataset = resource.dataset
             self.assertEqual(1, dataset.id)
+
+    def test_post_resource_json_error(self):
+        body = {'description': 'Another Resource description',
+                'format': 'JSON'}
+        response = self.client.post('/dataset/1/resource/',
+                                    json.dumps(body),
+                                    content_type='application/json',
+                                    **self.headers)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(1, Resource.objects.count())
+
+    def test_get_resource_json(self):
+        response = self.client.get('/dataset/1/resource/1/')
+
+        self.assertEqual(200, response.status_code)
+
+        json_response = json.loads(response.content)
+        dataset = Dataset.objects.first()
+
+        self.assertEqual('My Resource', json_response['title'])
+        self.assertEqual('My Resource description',
+                         json_response['description'])
+        self.assertEqual('CSV', json_response['format'])
+        self.assertEqual(
+            'http://testserver{}'.format(dataset.get_absolute_url()),
+            json_response['dataset'])
