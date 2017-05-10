@@ -93,7 +93,7 @@ class ResourceList(APIView):
         return Response(serializer.data)
 
     def post(self, request, dataset_pk, format=None):
-        request.data['dataset'] = '/dataset/1/'
+        request.data['dataset'] = '/dataset/{}/'.format(dataset_pk)
         serializer = ResourceSerializer(data=request.data,
                                         context={'request': request})
         if serializer.is_valid():
@@ -104,12 +104,12 @@ class ResourceList(APIView):
 
 @permission_classes((IsAuthenticatedOrReadOnly,))
 class ResourceDetail(APIView):
-    def get(self, request, pk, format=None):
+    def get(self, request, dataset_pk, pk, format=None):
         resource = get_object_or_404(Resource, pk=pk)
-        serializer = ResourceSerializer(resource)
+        serializer = ResourceSerializer(resource, context={'request': request})
         return Response(serializer.data)
 
-    def put(self, request, pk, format=None):
+    def put(self, request, dataset_pk, pk, format=None):
         resource = get_object_or_404(Resource, pk=pk)
         serializer = ResourceSerializer(resource, data=request.data)
         if serializer.is_valid():
@@ -117,7 +117,7 @@ class ResourceDetail(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, format=None):
+    def delete(self, request, dataset_pk, pk, format=None):
         resource = get_object_or_404(Resource, pk=pk)
         resource.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
