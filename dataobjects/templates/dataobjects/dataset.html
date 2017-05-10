@@ -1,0 +1,29 @@
+{% extends "dataobjects/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <a href="">
+            <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+        </a> /
+        <a href="{% url 'dataset' %}">Datasets</a> /
+        <a href="">{{ dataset.title }}</a>
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h1>{{ dataset.title }}</h1>
+    </div>
+    <div class="col-md-2 col-md-offset-4">
+        <h1><a href="{% url 'dataset_edit' dataset.id %}" class="btn btn-primary" role="button">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
+        </a>
+        <a href="{% url 'dataset_delete' dataset.id %}" class="btn btn-danger" role="button">
+            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Delete
+        </a></h1>
+    </div>
+</div>
+
+<p>{{ dataset.description }}</p>
+{% endblock %}

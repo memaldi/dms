@@ -1,0 +1,34 @@
+{% extends "dataobjects/base.html" %}
+
+{% block content %}
+
+    <div class="page-header">
+        <h1>
+            <a href="">
+                <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+            </a> /
+            <a href="{% url 'dataset' %}">Datasets</a>
+        </h1>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <a class="btn btn-success" href="{% url 'dataset_new' %}" role="button">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                New Dataset
+            </a>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-md-12">
+            <div class="list-group">
+                {% for dataset in datasets %}
+                    <a href="{% url 'dataset_detail' dataset.id %}" class="list-group-item">
+                        <h4 class="list-group-item-heading">{{ dataset.title }}</h4>
+                        <p class="list-group-item-text">{{ dataset.description }}</p>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

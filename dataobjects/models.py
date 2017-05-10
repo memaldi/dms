@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
+from django.urls import reverse
 
 # Create your models here.
 
@@ -22,6 +23,9 @@ class Dataset(models.Model):
         if self.name == '':
             self.name = slugify(self.title)
         super(Dataset, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('dataset_detail', args=[str(self.id)])
 
 
 class Resource(models.Model):
