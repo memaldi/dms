@@ -37,5 +37,6 @@ class Resource(models.Model):
         default=DEFAULT_RESOURCE_DESCRIPTION)
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
-    _format = models.CharField(max_length=10)
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    _format = models.CharField(max_length=10, name='format')
+    dataset = models.ForeignKey(Dataset, related_name='resources',
+                                on_delete=models.CASCADE, null=False)

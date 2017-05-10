@@ -74,20 +74,20 @@ class ResourceTestCase(TestCase):
     def test_create_resource_default_description(self):
         dataset = Dataset(title='Test dataset')
         dataset.save()
-        resource = Resource(title='Test resource', _format='CSV',
+        resource = Resource(title='Test resource', format='CSV',
                             dataset=dataset)
         resource.save()
         self.assertEqual(len(Resource.objects.all()), 1)
         self.assertEqual(Resource.objects.first().title, 'Test resource')
         self.assertEqual(Resource.objects.first().description,
                          Resource.DEFAULT_RESOURCE_DESCRIPTION)
-        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        self.assertEqual(Resource.objects.first().format, 'CSV')
         self.assertEqual(Resource.objects.first().dataset, dataset)
 
     def test_create_resource(self):
         dataset = Dataset(title='Test dataset')
         dataset.save()
-        resource = Resource(title='Test resource', _format='CSV',
+        resource = Resource(title='Test resource', format='CSV',
                             description='This is a resource description',
                             dataset=dataset)
         resource.save()
@@ -95,29 +95,29 @@ class ResourceTestCase(TestCase):
         self.assertEqual(Resource.objects.first().title, 'Test resource')
         self.assertEqual(Resource.objects.first().description,
                          'This is a resource description')
-        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        self.assertEqual(Resource.objects.first().format, 'CSV')
         self.assertEqual(Resource.objects.first().dataset, dataset)
 
     def test_modify_resource(self):
         dataset = Dataset(title='Test dataset')
         dataset.save()
-        resource = Resource(title='Test resource', _format='CSV',
+        resource = Resource(title='Test resource', format='CSV',
                             dataset=dataset)
         resource.save()
         self.assertEqual(len(Resource.objects.all()), 1)
         self.assertEqual(Resource.objects.first().title, 'Test resource')
-        self.assertEqual(Resource.objects.first()._format, 'CSV')
+        self.assertEqual(Resource.objects.first().format, 'CSV')
         resource.title = 'Modified Test Resource'
-        resource._format = 'JSON'
+        resource.format = 'JSON'
         resource.save()
         self.assertEqual(Resource.objects.first().title,
                          'Modified Test Resource')
-        self.assertEqual(Resource.objects.first()._format, 'JSON')
+        self.assertEqual(Resource.objects.first().format, 'JSON')
 
     def _delete_dataset_and_resource(self, on_cascade=False):
         dataset = Dataset(title='Test dataset')
         dataset.save()
-        resource = Resource(title='Test resource', _format='CSV',
+        resource = Resource(title='Test resource', format='CSV',
                             dataset=dataset)
         resource.save()
         self.assertEqual(len(Resource.objects.all()), 1)
@@ -179,7 +179,7 @@ class DatasetFormTestCase(TestCase):
         self.assertEqual(False, form.is_valid())
 
 
-class DatasetListJSONTestCase(TestCase):
+class DatasetJSONTestCase(TestCase):
     def setUp(self):
         self.client = Client()
 
@@ -405,3 +405,57 @@ class DatasetHTMLTestCase(TestCase):
         response = self.client.get('/dataset/1/delete/', **self.headers)
 
         self.assertEqual(302, response.status_code)
+
+
+class ResourceJSONTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        user = User.objects.create_user(BASIC_USER, password=BASIC_PASSWORD)
+        user.save()
+
+        dataset = Dataset(title='My Dataset',
+                          description='My Dataset description')
+        dataset.save()
+
+        resource = Resource(title='My Resource',
+                            description='My Resource description',
+                            format='CSV', dataset=dataset)
+        resource.save()
+
+        self.headers = {'HTTP_AUTHORIZATION': 'BASIC {}'.format(
+                       base64.b64encode('{}:{}'.format(
+                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+
+        self.body = {'title': 'Another Resource',
+                     'description': 'Another Resource description',
+                     'format': 'JSON'}
+
+    def test_get_resource_json(self):
+        response = self.client.get('/dataset/1/resource/')
+
+        response_json = json.loads(response.content)
+        dataset = Dataset.objects.first()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response_json))
+        self.assertEqual('My Resource', response_json[0]['title'])
+        self.assertEqual('My Resource description',
+                         response_json[0]['description'])
+        self.assertEqual('CSV', response_json[0]['format'])
+        self.assertEqual(
+            'http://testserver{}'.format(dataset.get_absolute_url()),
+            response_json[0]['dataset'])
+
+    def test_post_resource_json(self):
+        response = self.client.post('/dataset/1/resource/',
+                                    json.dumps(self.body),
+                                    content_type='application/json',
+                                    **self.headers)
+
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, Resource.objects.count())
+
+        for resource in Resource.objects.all():
+            dataset = resource.dataset
+            self.assertEqual(1, dataset.id)

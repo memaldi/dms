@@ -10,4 +10,10 @@ urlpatterns = [
         name='dataset_edit'),
     url(r'^dataset/(?P<pk>[0-9]+)/delete/$', views.delete_dataset,
         name='dataset_delete'),
+    url(r'^dataset/(?P<dataset_pk>[0-9]+)/resource/$',
+        views.ResourceList.as_view(),
+        name='resource'),
+    url(r'^dataset/(?P<dataset_pk>[0-9]+)/resource/(?P<pk>[0-9]+)/$',
+        views.ResourceDetail.as_view(),
+        name='resource_detail'),
 ]
