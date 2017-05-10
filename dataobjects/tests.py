@@ -213,15 +213,12 @@ class DatasetListJSONTestCase(TestCase):
     def test_post_dataset_json(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another dataset',
                 'name': 'another-dataset',
                 'description': 'Another dataset description'}
         response = self.client.post('/dataset/', json.dumps(body),
-                                    content_type='application/json', **headers)
+                                    content_type='application/json',
+                                    **self.json_headers)
 
         self.assertEqual(201, response.status_code)
 
@@ -256,15 +253,12 @@ class DatasetListJSONTestCase(TestCase):
     def test_put_dataset_json(self):
         self.assertEqual(1, Dataset.objects.count())
 
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
         body = {'title': 'Another modified dataset',
                 'name': 'another-modified-dataset',
                 'description': 'Another modified dataset description'}
         response = self.client.put('/dataset/1/', json.dumps(body),
-                                   content_type='application/json', **headers)
+                                   content_type='application/json',
+                                   **self.json_headers)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, Dataset.objects.count())
@@ -289,13 +283,10 @@ class DatasetListJSONTestCase(TestCase):
 
     def test_delete_dataset_json(self):
         self.assertEqual(1, Dataset.objects.count())
-        headers = {'HTTP_ACCEPT': 'application/json',
-                   'HTTP_AUTHORIZATION': 'BASIC {}'.format(
-                       base64.b64encode('{}:{}'.format(
-                            BASIC_USER, BASIC_PASSWORD).encode()).decode())}
+
         response = self.client.delete('/dataset/1/',
                                       content_type='application/json',
-                                      **headers)
+                                      **self.json_headers)
 
         self.assertEqual(204, response.status_code)
         self.assertEqual(0, Dataset.objects.count())
